@@ -1,3 +1,7 @@
+var docFileName = "";
+var xmlBody = "";
+
+
 function UploadProcess() {
     //Reference the FileUpload element.
 
@@ -41,6 +45,10 @@ function GetTableFromExcel(data) {
     var fileName = fileUpload.files[0].name;
     var jobName = fileName.replace(/\.[^/.]+$/, "");
 
+    var h1FileName = document.getElementById("filename");
+    h1FileName.innerHTML = jobName;
+    docFileName = jobName;
+
     var ExcelTable = document.getElementById("ExcelTable");
     var codeTag = document.getElementById("xmlInHtml");
 
@@ -75,15 +83,15 @@ function GetTableFromExcel(data) {
     }
     var codeLine = document.createElement("p");
     codeLine.innerHTML += `
-    &lt;?xml version="1.0" encoding="UTF-8"?&gt;<br />
-    &lt;Root Application="Microvellum" ApplicationVersion="7.0"&gt;<br />
-        &lt;Project Name="${jobName}"&gt;<br />
-            &lt;SpecificationGroups&gt;<br />
-                &lt;SpecificationGroup Name="01-JS Standard"&gt;<br />
-                &lt;/SpecificationGroup&gt;<br />
-            &lt;/SpecificationGroups&gt;<br />
+    &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;Root Application="Microvellum" ApplicationVersion="7.0"&gt;
+        &lt;Project Name="${jobName}"&gt;
+            &lt;SpecificationGroups&gt;
+                &lt;SpecificationGroup Name="01-JS Standard"&gt;
+                &lt;/SpecificationGroup&gt;
+            &lt;/SpecificationGroups&gt;
 
-            &lt;Products&gt;<br /><br /><br />
+            &lt;Products&gt;
     `;
     codeTag.appendChild(codeLine);
 
@@ -94,7 +102,7 @@ function GetTableFromExcel(data) {
         var rowNumber = excelRows[i];
 
         var codeLine = document.createElement("p");
-        codeLine.setAttribute("id", `productName${i}`);
+        codeLine.setAttribute("id", `productName${i}`);``
         codeTag.appendChild(codeLine);
         var productElement = document.getElementById(`productName${i}`);
 
@@ -109,40 +117,25 @@ function GetTableFromExcel(data) {
                 if(headers.indexOf(key) <= 6) {
                     switch(key) {
                         case "Qty":
-                            codeLine.innerHTML += `
-                                &lt;Quantity&gt;${cellValue}&lt;/Quantity&gt;<br />
-                            `
+                            codeLine.innerHTML += `&lt;Quantity&gt;${cellValue}&lt;/Quantity&gt;`
                         break;
                         case "Name":
-                            productElement.innerHTML += `
-                                &lt;Product Name="${cellValue}"&gt;<br />
-                            `;
+                            productElement.innerHTML += `&lt;Product Name="${cellValue}"&gt;`;
                         break;
                         case "Width":
-                            codeLine.innerHTML += `
-                                &lt;Width&gt;${cellValue}&lt;/Width&gt;<br />
-                            `
+                            codeLine.innerHTML += `&lt;Width&gt;${cellValue}&lt;/Width&gt;`
                         break;
                         case "Height":
-                            codeLine.innerHTML += `
-                                &lt;Height&gt;${cellValue}&lt;/Height&gt;<br />
-                            `
+                            codeLine.innerHTML += `&lt;Height&gt;${cellValue}&lt;/Height&gt;`
                         break;
                         case "Depth":
-                            codeLine.innerHTML += `
-                                &lt;Depth&gt;${cellValue}&lt;/Depth&gt;<br />
-                            `
+                            codeLine.innerHTML += `&lt;Depth&gt;${cellValue}&lt;/Depth&gt;`
                         break;
                         case "ProductSpecGroupName":
-                            codeLine.innerHTML += `
-                                &lt;LinkIDSpecificationGroup&gt;${cellValue}&lt;/LinkIDSpecificationGroup&gt;<br />
-                            `
+                            codeLine.innerHTML += `&lt;LinkIDSpecificationGroup&gt;${cellValue}&lt;/LinkIDSpecificationGroup&gt;`
                         break;
                         case "Comments":
-                            codeLine.innerHTML += `
-                                &lt;Comment&gt;${cellValue}&lt;/Comment&gt;<br />
-                                &lt;Prompts&gt;
-                            `
+                            codeLine.innerHTML += `&lt;Comment&gt;${cellValue}&lt;/Comment&gt;&lt;Prompts&gt;`
                         break;
                     }
 
@@ -157,28 +150,45 @@ function GetTableFromExcel(data) {
                     var contentCell = document.createElement("TH");
                     contentCell.innerHTML = cellValue + "  " + key;
                     row.appendChild(contentCell);
-                    codeTag.innerHTML += `
-                            &lt;Prompt Name="${key}"&gt;<br />
-                                &lt;Value&gt;${cellValue}&lt;/Value&gt;<br />
-                            &lt;/Prompt&gt;<br />
-                        `
+                    codeLine.innerHTML += `&lt;Prompt Name="${key}"&gt;&lt;Value&gt;${cellValue}&lt;/Value&gt;&lt;/Prompt&gt;`
+                    codeTag.appendChild(codeLine);
                 }
             }
         }
 
-        codeTag.innerHTML += `
-                &lt;/Prompts&gt;<br />
-            &lt;/Product&gt;<br />
-            <br /><br /><br /><br />
-        `
-        
+        codeLine.innerHTML += `&lt;/Prompts&gt;&lt;/Product&gt;` 
+        codeTag.appendChild(codeLine);       
     }
     
-    codeTag.innerHTML += `
-            &lt;/Products&gt;<br />
-        &lt;/Project&gt;<br />
-    &lt;/Root&gt;<br />
-    `
-    ExcelTable.innerHTML = "";
+    codeLine.innerHTML += `&lt;/Products&gt;&lt;/Project&gt;&lt;/Root&gt;`
+    codeTag.appendChild(codeLine);
+    
     ExcelTable.appendChild(myTable);
 };
+
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.style.display = 'none';
+    element.setAttribute('href', 'data:text/pain;charset=utf-8' + encodeURIComponent(text))
+    element.setAttribute('download', filename);
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
+document.getElementById("download-btn").addEventListener("click", function() {
+    var allPs = document.getElementsByTagName("p");
+    for (var i = 0; i < allPs.length; i++) {
+        if(allPs[i].innerText) {
+            xmlBody += allPs[i].innerText;
+        }
+    }
+
+    var finalFileName = docFileName + ".xml";
+    var xml = xmlBody;
+
+    console.log("finalFileName: ", finalFileName);
+    console.log("xml: ", xml);
+    // console.log("text: ", text);
+    download(finalFileName, xml);
+}, false);
