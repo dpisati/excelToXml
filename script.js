@@ -176,19 +176,42 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
+
 document.getElementById("download-btn").addEventListener("click", function() {
-    var allPs = document.getElementsByTagName("p");
-    for (var i = 0; i < allPs.length; i++) {
-        if(allPs[i].innerText) {
-            xmlBody += allPs[i].innerText;
+        var allPs = document.getElementsByTagName("p");
+        for (var i = 0; i < allPs.length; i++) {
+            if(allPs[i].innerText) {
+                xmlBody += allPs[i].innerText;
+            }
         }
-    }
 
-    var finalFileName = docFileName + ".xml";
-    var xml = xmlBody;
+        var finalFileName = docFileName + ".xml";
+        var xml = xmlBody;
 
-    console.log("finalFileName: ", finalFileName);
-    console.log("xml: ", xml);
-    // console.log("text: ", text);
-    download(finalFileName, xml);
-}, false);
+        var blob = new Blob([xml], {
+            // type: "text/plain;charset=uft-8"
+        });
+
+        console.log("finalFileName: ", finalFileName);
+        console.log("xml: ", xml);
+
+        saveAs(blob, finalFileName)
+    });
+
+
+// document.getElementById("download-btn").addEventListener("click", function() {
+//     var allPs = document.getElementsByTagName("p");
+//     for (var i = 0; i < allPs.length; i++) {
+//         if(allPs[i].innerText) {
+//             xmlBody += allPs[i].innerText;
+//         }
+//     }
+
+//     var finalFileName = docFileName + ".xml";
+//     var xml = xmlBody;
+
+//     console.log("finalFileName: ", finalFileName);
+//     console.log("xml: ", xml);
+//     // console.log("text: ", text);
+//     download(finalFileName, xml);
+// }, false);
