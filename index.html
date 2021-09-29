@@ -9,16 +9,20 @@
 <body>
 
 <h1>Excel to XML</h1>
+<button id="download-btn">Download</button>
 
 <input type="file" id="fileUpload" />
 <input type="button" id="upload" value="Upload" onclick="UploadProcess()" />
 <br/>
 
+
 <div id="ExcelTable"></div>
+<h1 id="filename"></h1>
 <code id="xmlInHtml"></code>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/xlsx.full.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script src="FileSaver.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
