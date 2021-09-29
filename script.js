@@ -191,9 +191,11 @@ function GetTableFromExcel(data) {
                     }
                 }
             }
+
             codeTag.innerHTML += `
                     &lt;/Prompts&gt;<br />
-                &lt;/Product&gt;<br /><br /><br /><br /><br />
+                &lt;/Product&gt;<br />
+                <br /><br /><br /><br />
             `
         }
     }
