@@ -1,12 +1,12 @@
 function UploadProcess() {
     //Reference the FileUpload element.
-    var fileUpload = document.getElementById("fileUpload");
 
     //Validate whether File is valid Excel file.
     var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
-    console.log("regex", regex.test(fileUpload.value.toLowerCase()));
-
+    
     if (regex.test(fileUpload.value.toLowerCase())) {
+              
+        
         if (typeof (FileReader) != "undefined") {
             var reader = new FileReader();
 
@@ -35,15 +35,21 @@ function UploadProcess() {
         alert("Please upload a valid Excel file.");
     }
 };
+
 function GetTableFromExcel(data) {
+    var fileUpload = document.getElementById("fileUpload");
+    var fileName = fileUpload.files[0].name;
+    var jobName = fileName.replace(/\.[^/.]+$/, "");
+
+    var ExcelTable = document.getElementById("ExcelTable");
+    var codeTag = document.getElementById("xmlInHtml");
+
     //Read the Excel File data in binary
     var workbook = XLSX.read(data, {
         type: 'binary'
     });
-
     //get the name of First Sheet.
     var Sheet = workbook.SheetNames[0];
-    
 
     //Read all rows from First Sheet into an JSON array.
     var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[Sheet]);
@@ -53,92 +59,150 @@ function GetTableFromExcel(data) {
     myTable.border = "1";
 
     const headers = [];
-
+    
     //Add the header row.
     var row = myTable.insertRow(-1);
-    var p = excelRows[0];
 
+    var p = excelRows[0];
     for (var key in p) {
         if (p.hasOwnProperty(key)) {
-            var keyName =  p[key].trim().replace(/\s/g, '_')
+            var cellValue =  p[key].trim().replace(/\s/g, '_')
+            var columnNumber = key.trim().replace('__EMPTY', '').replace('_', '');
+            
+            if(columnNumber === "") {
+                columnNumber = 0;
+            }
+
             var headerCell = document.createElement("TH");
-            headerCell.innerHTML = keyName;
-            headers.push(keyName);
+            headerCell.innerHTML = cellValue + " " + columnNumber;
+            headers.push(cellValue);
             row.appendChild(headerCell);
         }
     }
 
-    console.log("headers: ", headers);
+    var codeLine = document.createElement("p");
+    codeLine.innerHTML += `
+    &lt;?xml version="1.0" encoding="UTF-8"?&gt;<br />
+    &lt;Root Application="Microvellum" ApplicationVersion="7.0"&gt;<br />
+        &lt;Project Name="${jobName}"&gt;<br />
+            &lt;SpecificationGroups&gt;<br />
+                &lt;SpecificationGroup Name="01-JS Standard"&gt;<br />
+                &lt;/SpecificationGroup&gt;<br />
+            &lt;/SpecificationGroups&gt;<br />
+
+            &lt;Products&gt;<br /><br /><br />
+    `;
+    codeTag.appendChild(codeLine);
+
 
     //Add the data rows from Excel file.
     for (var i = 1; i < excelRows.length; i++) {
+
         //Add the data row.
-        var row = myTable.insertRow(-1);
-        var test = excelRows[i];
+        var rowNumber = excelRows[i];
+        var isTheLineEmpty = (rowNumber.__EMPTY_18 === "" ||  rowNumber.__EMPTY === "");
 
- 
+        if(!isTheLineEmpty) {
 
-        for (var key in excelRows[i]) {
-            if (test.hasOwnProperty(key)) {
-                var keyName =  test[key].trim().replace(/\s/g, '_');
-                var columnNumber = key.trim().replace('__EMPTY_', '');
-                var cellTitle = headers[columnNumber];
+            var codeLine = document.createElement("p");
+            codeLine.setAttribute("id", `productName${i}`);
+            codeTag.appendChild(codeLine);
+            var productElement = document.getElementById(`productName${i}`);
 
-                if(keyName && keyName !== "") {
-                    if(cellTitle) {
-                        var contentCell = document.createElement("TH");
-                        contentCell.innerHTML = keyName + ' ' + key.trim().replace('__EMPTY_', '');
-                        console.log("========================")
-                        console.log("Column Value: ", keyName)
-                        console.log("Column Number: ", cellTitle, key)
-                        console.log("========================")
-                        row.appendChild(contentCell);
+
+            var row = myTable.insertRow(-1);
+
+            for (var key in excelRows[i]) {
+                if (rowNumber.hasOwnProperty(key)) {
+                    var cellValue =  rowNumber[key].trim().replace(/\s/g, ' ');
+                    var columnNumber = key.trim().replace('__EMPTY', '').replace('_', '');
+                    if(columnNumber === "") {
+                        columnNumber = 0;
+                    }
+                    var cellTitle = headers[columnNumber];
+
+                    var codeLine = document.createElement("p");
+
+                    if(columnNumber <= 6) {
+
+                        switch(columnNumber) {
+                            case 0:
+                                codeLine.innerHTML += `
+                                    &lt;Quantity&gt;${cellValue}&lt;/Quantity&gt;<br />
+                                `
+                            break;
+                            case "1":
+                                productElement.innerHTML += `
+                                    &lt;Product Name="${cellValue}"&gt;<br />
+                                `;
+                            break;
+                            case "2":
+                                codeLine.innerHTML += `
+                                    &lt;Width&gt;${cellValue}&lt;/Width&gt;<br />
+                                `
+                            break;
+                            case "3":
+                                codeLine.innerHTML += `
+                                    &lt;Height&gt;${cellValue}&lt;/Height&gt;<br />
+                                `
+                            break;
+                            case "4":
+                                codeLine.innerHTML += `
+                                    &lt;Depth&gt;${cellValue}&lt;/Depth&gt;<br />
+                                `
+                            break;
+                            case "5":
+                                codeLine.innerHTML += `
+                                    &lt;LinkIDSpecificationGroup&gt;${cellValue}&lt;/LinkIDSpecificationGroup&gt;<br />
+                                `
+                            break;
+                            case "6":
+                                codeLine.innerHTML += `
+                                    &lt;Comment&gt;${cellValue}&lt;/Comment&gt;<br />
+                                    &lt;Prompts&gt;
+                                `
+                            break;
+                        }
+
+                        codeTag.appendChild(codeLine);
+
+                        if(cellValue && cellValue !== "") {
+                            if(cellTitle) {
+                                var contentCell = document.createElement("TH");
+                                contentCell.innerHTML = cellValue + ' ' + columnNumber;
+                                row.appendChild(contentCell);
+                            }
+                        }
+                    }
+
+                    if(columnNumber > 6) {
+                        if(cellValue && cellValue !== "") {
+                            if(cellTitle) {
+                                var contentCell = document.createElement("TH");
+                                contentCell.innerHTML = cellValue + ' ' + columnNumber;
+                                row.appendChild(contentCell);
+                                codeTag.innerHTML += `
+                                        &lt;Prompt Name="${cellTitle}"&gt;<br />
+                                            &lt;Value&gt;${cellValue}&lt;/Value&gt;<br />
+                                        &lt;/Prompt&gt;<br />
+                                    `
+                            }
+                        }
                     }
                 }
             }
+            codeTag.innerHTML += `
+                    &lt;/Prompts&gt;<br />
+                &lt;/Product&gt;<br /><br /><br /><br /><br />
+            `
         }
     }
-
-    //Add the data rows from Excel file.
-    for (var i = 1; i < excelRows.length; i++) {
-        //Add the data row.
-        // var row = myTable.insertRow(-1);
-        // var test = excelRows[i]
-        // for (var key in excelRows[i]) {
-        //     if (test.hasOwnProperty(key)) {
-        //         var keyName =  test[key].trim().replace(/\s/g, '_')
-        //         var headerCell = document.createElement("TH");
-        //         headerCell.innerHTML = keyName;
-        //         if(keyName !== "") {
-        //             row.appendChild(headerCell);
-        //             console.log("AAAAAA: ", headerCell)
-        //         }
-        //     }
-        // }
-
-        //Add the data cells.
-        // var cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Id;
-        // console.log("AAAAA: ", excelRows[i])
-
-        // cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Name;
-
-        // cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Country;
-        
-        // cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Age;
-        
-        // cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Date;
-        
-        // cell = row.insertCell(-1);
-        // cell.innerHTML = excelRows[i].Gender;
-    }
     
-
-    var ExcelTable = document.getElementById("ExcelTable");
+    codeTag.innerHTML += `
+            &lt;/Products&gt;<br />
+        &lt;/Project&gt;<br />
+    &lt;/Root&gt;<br />
+    `
     ExcelTable.innerHTML = "";
     ExcelTable.appendChild(myTable);
 };
