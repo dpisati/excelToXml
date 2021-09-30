@@ -70,14 +70,24 @@ function UploadProcess() {
     }
 };
 
+function removeSpecialCharacters(string) {
+    var newString = string
+    newString = newString.replace("&", " and ");
+    newString = newString.replace(">", " less than ");
+    newString = newString.replace("<", " more than ");
+    newString = newString.replace(/["']/g, "");
+    return newString;
+}
+
 function GetTableFromExcel(data) {
     deleteButton.style.display = "inline";
     downloadButton.style.display = "inline";
     browseButton.style.display = "none";
     
     var fileName = fileUpload.files[0].name;
+    fileName = removeSpecialCharacters(fileName);
     var jobName = fileName.replace(/\.[^/.]+$/, "");
-
+    jobName = removeSpecialCharacters(jobName);
     
     h1FileName.innerHTML = jobName;
     docFileName = jobName;
@@ -145,8 +155,9 @@ function GetTableFromExcel(data) {
         for (var key in excelRows[i]) {
             if (rowNumber.hasOwnProperty(key)) {
                 var cellValue =  rowNumber[key].trim().replace(/\s/g, ' ');
-                var cellTitle = headers[columnNumber];
+                // var cellTitle = headers[columnNumber];
                 var codeLine = document.createElement("p");
+                cellValue = removeSpecialCharacters(cellValue);
 
                 if(headers.indexOf(key) <= 6) {
                     switch(key) {
