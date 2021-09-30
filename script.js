@@ -1,18 +1,49 @@
 var docFileName = "";
 var xmlBody = "";
+var fileUpload = document.getElementById("fileUpload");
+var h1FileName = document.getElementById("filename");
+var ExcelTable = document.getElementById("ExcelTable");
+var codeTag = document.getElementById("xmlInHtml");
+var htmlTable = document.getElementById("table");
+var uploadFile = document.getElementById("fileUpload");
+var deleteButton = document.getElementById("remove-btn");
+var downloadButton = document.getElementById("download-btn");
+var browseButton = document.getElementById("browse-btn");
+
+fileUpload.addEventListener('change', (event) => {
+    UploadProcess();
+  });
+
+function cleanPage() {   
+    while (ExcelTable.firstChild) {
+        ExcelTable.removeChild(ExcelTable.firstChild);
+    }    
+    while (codeTag.firstChild) {
+        codeTag.removeChild(codeTag.firstChild);
+    }    
+    
+    h1FileName.innerHTML = ""
+    uploadFile.value = "";
+    docFileName = "";
+    xmlBody = "";
+
+    deleteButton.style.display = "none";
+    downloadButton.style.display = "none";
+    browseButton.style.display = "inline";
+}
 
 function UploadProcess() {
     //Reference the FileUpload element.
-
+    
     //Validate whether File is valid Excel file.
     // var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
     var isExcelFile = fileUpload.value.includes(".xls");
-
+    
     // if (regex.test(fileUpload.value.toLowerCase())) {
-    if (isExcelFile) {
-        if (typeof (FileReader) != "undefined") {
-            var reader = new FileReader();
-
+        if (isExcelFile) {
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+                
             //For Browsers other than IE.
             if (reader.readAsBinaryString) {
                 reader.onload = function (e) {
@@ -40,16 +71,19 @@ function UploadProcess() {
 };
 
 function GetTableFromExcel(data) {
-    var fileUpload = document.getElementById("fileUpload");
+    deleteButton.style.display = "inline";
+    downloadButton.style.display = "inline";
+    browseButton.style.display = "none";
+    
     var fileName = fileUpload.files[0].name;
     var jobName = fileName.replace(/\.[^/.]+$/, "");
 
-    var h1FileName = document.getElementById("filename");
+    
     h1FileName.innerHTML = jobName;
     docFileName = jobName;
 
-    var ExcelTable = document.getElementById("ExcelTable");
-    var codeTag = document.getElementById("xmlInHtml");
+    
+    
 
     //Read the Excel File data in binary
     var workbook = XLSX.read(data, {
@@ -63,6 +97,7 @@ function GetTableFromExcel(data) {
         
     //Create a HTML Table element.
     var myTable  = document.createElement("table");
+    myTable.setAttribute("id", "table");
     myTable.border = "1";
 
     const headers = [];
@@ -162,7 +197,7 @@ function GetTableFromExcel(data) {
     codeLine.innerHTML += `&lt;/Products&gt;&lt;/Project&gt;&lt;/Root&gt;`
     codeTag.appendChild(codeLine);
     
-    ExcelTable.appendChild(myTable);
+    // ExcelTable.appendChild(myTable);
 };
 
 function download(filename, text) {
@@ -175,7 +210,11 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
-document.getElementById("download-btn").addEventListener("click", function() {
+deleteButton.addEventListener("click", function() {
+    cleanPage();
+})
+
+downloadButton.addEventListener("click", function() {
         var allPs = document.getElementsByTagName("p");
         for (var i = 0; i < allPs.length; i++) {
             if(allPs[i].innerText) {
@@ -189,9 +228,5 @@ document.getElementById("download-btn").addEventListener("click", function() {
         var blob = new Blob([xml], {
             // type: "text/plain;charset=uft-8"
         });
-
-        console.log("finalFileName: ", finalFileName);
-        console.log("xml: ", xml);
-
         saveAs(blob, finalFileName)
 });
