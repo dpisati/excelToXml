@@ -1,30 +1,53 @@
+//Defining the initial state
 var docFileName = "";
 var xmlBody = "";
+
+//Getting the elements from HTML
 var fileUpload = document.getElementById("fileUpload");
 var h1FileName = document.getElementById("filename");
-var ExcelTable = document.getElementById("ExcelTable");
 var codeTag = document.getElementById("xmlInHtml");
 var htmlTable = document.getElementById("table");
-var uploadFile = document.getElementById("fileUpload");
 var deleteButton = document.getElementById("remove-btn");
 var downloadButton = document.getElementById("download-btn");
 var browseButton = document.getElementById("browse-btn");
 var mainSection = document.getElementById("main");
 
+//Listen to on load file
 fileUpload.addEventListener('change', (event) => {
     UploadProcess();
-  });
+});
 
+//Function to clear and reset the page
+deleteButton.addEventListener("click", function() {
+    cleanPage();
+})
+
+//Download funtion
+downloadButton.addEventListener("click", function() {
+        var allPs = document.getElementsByTagName("p");
+        for (var i = 0; i < allPs.length; i++) {
+            if(allPs[i].innerText) {
+                xmlBody += allPs[i].innerText;
+            }
+        }
+
+        var finalFileName = docFileName + ".xml";
+        var xml = xmlBody;
+
+        var blob = new Blob([xml], {
+            // type: "text/plain;charset=uft-8"
+        });
+        saveAs(blob, finalFileName)
+});
+
+//Clean and reload the start state
 function cleanPage() {   
-    while (ExcelTable.firstChild) {
-        ExcelTable.removeChild(ExcelTable.firstChild);
-    }    
     while (codeTag.firstChild) {
         codeTag.removeChild(codeTag.firstChild);
     }    
     
     h1FileName.innerHTML = ""
-    uploadFile.value = "";
+    fileUpload.value = "";
     docFileName = "";
     xmlBody = "";
 
@@ -34,18 +57,15 @@ function cleanPage() {
     browseButton.style.display = "inline";
 }
 
+//Upload button function
 function UploadProcess() {
-    //Reference the FileUpload element.
-    
-    //Validate whether File is valid Excel file.
-    // var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
+    //Validate is the file is xls
     var isExcelFile = fileUpload.value.includes(".xls");
     
-    // if (regex.test(fileUpload.value.toLowerCase())) {
-        if (isExcelFile) {
-            if (typeof (FileReader) != "undefined") {
-                var reader = new FileReader();
-                
+    if (isExcelFile) {
+        if (typeof (FileReader) != "undefined") {
+            var reader = new FileReader();
+            
             //For Browsers other than IE.
             if (reader.readAsBinaryString) {
                 reader.onload = function (e) {
@@ -72,6 +92,7 @@ function UploadProcess() {
     }
 };
 
+//Remove characters not acceptable in XML
 function removeSpecialCharacters(string) {
     var newString = string
     newString = newString.replace("&", " and ");
@@ -81,7 +102,11 @@ function removeSpecialCharacters(string) {
     return newString;
 }
 
+//Read the data from updated Excel file
 function GetTableFromExcel(data) {
+    const headers = [];
+    const rooms = [];
+
     deleteButton.style.display = "inline";
     downloadButton.style.display = "inline";
     mainSection.style.display = "block";
@@ -95,9 +120,6 @@ function GetTableFromExcel(data) {
     h1FileName.innerHTML = jobName;
     docFileName = jobName;
 
-    
-    
-
     //Read the Excel File data in binary
     var workbook = XLSX.read(data, {
         type: 'binary'
@@ -107,27 +129,8 @@ function GetTableFromExcel(data) {
 
     //Read all rows from First Sheet into an JSON array.
     var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[Sheet]);
-        
-    //Create a HTML Table element.
-    var myTable  = document.createElement("table");
-    myTable.setAttribute("id", "table");
-    myTable.border = "1";
-
-    const headers = [];
-    
-    //Add the header row.
-    var row = myTable.insertRow(-1);
-
-    var p = excelRows[0];
-    for (var key in p) {
-        if (p.hasOwnProperty(key)) {
-            var columnNumber = key.trim();
-            var headerCell = document.createElement("TH");
-            headerCell.innerHTML = columnNumber;
-            headers.push(columnNumber);
-            row.appendChild(headerCell);
-        }
-    }
+            
+    //Adding XML header to file
     var codeLine = document.createElement("p");
     codeLine.innerHTML += `
     &lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -137,12 +140,42 @@ function GetTableFromExcel(data) {
                 &lt;SpecificationGroup Name="01-JS Standard"&gt;
                 &lt;/SpecificationGroup&gt;
             &lt;/SpecificationGroups&gt;
-
-            &lt;Products&gt;
     `;
     codeTag.appendChild(codeLine);
 
-    //Add the data rows from Excel file.
+    // Loop to get rooms
+    for (var i = 1; i < excelRows.length; i++) {
+        //Add the data row.
+        var rowNumber = excelRows[i];
+
+        //Loop to get all Rooms
+        for (var key in excelRows[i]) {
+            if (rowNumber.hasOwnProperty(key)) {
+                var cellValue =  rowNumber[key].trim().replace(/\s/g, ' ');
+                cellValue = removeSpecialCharacters(cellValue);
+
+                if(key === "Room") {
+                    var isRoomInsideTheArray = (rooms.indexOf(cellValue) > -1);
+                    if(!isRoomInsideTheArray) {
+                        rooms.push(cellValue);
+                    }
+                }
+            }
+        }
+    }
+
+    //Add Rooms as Locations on top of the file
+    
+    codeLine.innerHTML += `&lt;Locations&gt;`;
+    rooms.forEach(room => {
+        codeLine.innerHTML += `&lt;Location Name="${room}"&gt;&lt;/Location&gt;`;
+    });
+    codeLine.innerHTML += `&lt;/Locations&gt;`;
+
+    //Start The projects tag
+    codeLine.innerHTML += `&lt;Products&gt;`;
+
+    //Loop for read cabinet row
     for (var i = 1; i < excelRows.length; i++) {
 
         //Add the data row.
@@ -153,16 +186,14 @@ function GetTableFromExcel(data) {
         codeTag.appendChild(codeLine);
         var productElement = document.getElementById(`productName${i}`);
 
-        var row = myTable.insertRow(-1);
-
+        //Loop to get the data outside the Prompts tag (Width / Height / Depth... etc)
         for (var key in excelRows[i]) {
             if (rowNumber.hasOwnProperty(key)) {
                 var cellValue =  rowNumber[key].trim().replace(/\s/g, ' ');
-                // var cellTitle = headers[columnNumber];
                 var codeLine = document.createElement("p");
                 cellValue = removeSpecialCharacters(cellValue);
 
-                if(headers.indexOf(key) <= 6) {
+                if(headers.indexOf(key) <= 7) {
                     switch(key) {
                         case "Qty":
                             codeLine.innerHTML += `&lt;Quantity&gt;${cellValue}&lt;/Quantity&gt;`
@@ -183,21 +214,17 @@ function GetTableFromExcel(data) {
                             codeLine.innerHTML += `&lt;LinkIDSpecificationGroup&gt;${cellValue}&lt;/LinkIDSpecificationGroup&gt;`
                         break;
                         case "Comments":
-                            codeLine.innerHTML += `&lt;Comment&gt;${cellValue}&lt;/Comment&gt;&lt;Prompts&gt;`
+                            codeLine.innerHTML += `&lt;Comment&gt;${cellValue}&lt;/Comment&gt;`
+                        break;
+                        case "Room":
+                            codeLine.innerHTML += `&lt;LinkIDLocation&gt;${cellValue}&lt;/LinkIDLocation&gt;&lt;Prompts&gt;`
                         break;
                     }
-
                     codeTag.appendChild(codeLine);
-
-                    var contentCell = document.createElement("TH");
-                    contentCell.innerHTML = cellValue;
-                    row.appendChild(contentCell);
                 }
 
-                if(headers.indexOf(key) > 6) {
-                    var contentCell = document.createElement("TH");
-                    contentCell.innerHTML = cellValue + "  " + key;
-                    row.appendChild(contentCell);
+                //Loop for each prompt on cabinet
+                if(headers.indexOf(key) > 7) {
                     codeLine.innerHTML += `&lt;Prompt Name="${key}"&gt;&lt;Value&gt;${cellValue}&lt;/Value&gt;&lt;/Prompt&gt;`
                     codeTag.appendChild(codeLine);
                 }
@@ -208,39 +235,7 @@ function GetTableFromExcel(data) {
         codeTag.appendChild(codeLine);       
     }
     
+    //Closing the file with tags required (Products, Project and Root)
     codeLine.innerHTML += `&lt;/Products&gt;&lt;/Project&gt;&lt;/Root&gt;`
     codeTag.appendChild(codeLine);
-    
-    // ExcelTable.appendChild(myTable);
 };
-
-function download(filename, text) {
-    var element = document.createElement('a');
-    element.style.display = 'none';
-    element.setAttribute('href', 'data:text/pain;charset=utf-8' + encodeURIComponent(text))
-    element.setAttribute('download', filename);
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-}
-
-deleteButton.addEventListener("click", function() {
-    cleanPage();
-})
-
-downloadButton.addEventListener("click", function() {
-        var allPs = document.getElementsByTagName("p");
-        for (var i = 0; i < allPs.length; i++) {
-            if(allPs[i].innerText) {
-                xmlBody += allPs[i].innerText;
-            }
-        }
-
-        var finalFileName = docFileName + ".xml";
-        var xml = xmlBody;
-
-        var blob = new Blob([xml], {
-            // type: "text/plain;charset=uft-8"
-        });
-        saveAs(blob, finalFileName)
-});
