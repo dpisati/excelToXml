@@ -32,6 +32,7 @@ main {
     padding: 0 60px;
     margin-top: 80px;
     margin-bottom: 100px;
+    display: none;
 }
 
 h2 {
@@ -45,6 +46,26 @@ img {
 
 aside {
     text-align: center;
+}
+
+section {
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+    background-color: rgb(36, 36, 36);
+    border-radius: 9px;
+    padding: 40px 80px;
+    margin-top: 40px;
+}
+
+section h2 {
+    text-align: center;
+}
+
+section ul li {
+    line-height: 3rem;
+    list-style: none;
+    font-size: 1.2rem;
 }
 
 button, input {

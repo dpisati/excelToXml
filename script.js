@@ -9,6 +9,7 @@ var uploadFile = document.getElementById("fileUpload");
 var deleteButton = document.getElementById("remove-btn");
 var downloadButton = document.getElementById("download-btn");
 var browseButton = document.getElementById("browse-btn");
+var mainSection = document.getElementById("main");
 
 fileUpload.addEventListener('change', (event) => {
     UploadProcess();
@@ -29,6 +30,7 @@ function cleanPage() {
 
     deleteButton.style.display = "none";
     downloadButton.style.display = "none";
+    mainSection.style.display = "none";
     browseButton.style.display = "inline";
 }
 
@@ -82,6 +84,7 @@ function removeSpecialCharacters(string) {
 function GetTableFromExcel(data) {
     deleteButton.style.display = "inline";
     downloadButton.style.display = "inline";
+    mainSection.style.display = "block";
     browseButton.style.display = "none";
     
     var fileName = fileUpload.files[0].name;
