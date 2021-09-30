@@ -1,16 +1,15 @@
 var docFileName = "";
 var xmlBody = "";
 
-
 function UploadProcess() {
     //Reference the FileUpload element.
 
     //Validate whether File is valid Excel file.
-    var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
-    
-    if (regex.test(fileUpload.value.toLowerCase())) {
-              
-        
+    // var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
+    var isExcelFile = fileUpload.value.includes(".xls");
+
+    // if (regex.test(fileUpload.value.toLowerCase())) {
+    if (isExcelFile) {
         if (typeof (FileReader) != "undefined") {
             var reader = new FileReader();
 
@@ -176,7 +175,6 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
-
 document.getElementById("download-btn").addEventListener("click", function() {
         var allPs = document.getElementsByTagName("p");
         for (var i = 0; i < allPs.length; i++) {
@@ -196,22 +194,4 @@ document.getElementById("download-btn").addEventListener("click", function() {
         console.log("xml: ", xml);
 
         saveAs(blob, finalFileName)
-    });
-
-
-// document.getElementById("download-btn").addEventListener("click", function() {
-//     var allPs = document.getElementsByTagName("p");
-//     for (var i = 0; i < allPs.length; i++) {
-//         if(allPs[i].innerText) {
-//             xmlBody += allPs[i].innerText;
-//         }
-//     }
-
-//     var finalFileName = docFileName + ".xml";
-//     var xml = xmlBody;
-
-//     console.log("finalFileName: ", finalFileName);
-//     console.log("xml: ", xml);
-//     // console.log("text: ", text);
-//     download(finalFileName, xml);
-// }, false);
+});
