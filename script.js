@@ -129,6 +129,15 @@ function GetTableFromExcel(data) {
 
     //Read all rows from First Sheet into an JSON array.
     var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[Sheet]);
+
+    //Add all Prompt names to headers array
+    var p = excelRows[0];
+    for (var key in p) {
+        if (p.hasOwnProperty(key)) {
+            var columnNumber = key.trim();
+            headers.push(columnNumber);
+        }
+    }
             
     //Adding XML header to file
     var codeLine = document.createElement("p");
